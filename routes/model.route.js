@@ -5,6 +5,8 @@ const modelController = require("../controllers/model.controller")
 const authMiddleware = require("../middlewares/auth.middleware")
 // const upload = multer();
 
-router.get("/", authMiddleware.authentication, modelController.index);
+router.get("/", modelController.index);
+router.get("/me", authMiddleware.authentication, modelController.getModelByUserId);
+router.get("/train", authMiddleware.authentication, modelController.trainModel);
 
 module.exports = router;
