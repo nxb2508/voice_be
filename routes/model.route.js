@@ -7,6 +7,6 @@ const upload = multer();
 
 router.get("/", modelController.index);
 router.get("/me", authMiddleware.authentication, modelController.getModelByUserId);
-router.get("/train", authMiddleware.authentication, upload.single("file"), modelController.trainModel);
+router.post("/train", authMiddleware.authentication, upload.single("file"), modelController.trainModel);
 
 module.exports = router;
