@@ -1,0 +1,5 @@
+- Cài đặt npm
+- Chạy terminal npm i để tải các thư viện
+- Đổi tên file .env.example -> .env
+- Liên hệ admin để lấy env
+- Để chạy project npm start

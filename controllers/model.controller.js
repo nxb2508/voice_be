@@ -54,7 +54,7 @@ module.exports.trainModel = async (req, res) => {
     formData.append("f0_method", f0_method);
     formData.append("epochs_number", 100);
 
-    const apiUrl = "http://14.224.131.219:8400/train-model";
+    const apiUrl = "https://voice.dinhmanhhung.net/train-model/";
     const response = await axios.post(apiUrl, formData, {
       headers: {
         ...formData.getHeaders(),
