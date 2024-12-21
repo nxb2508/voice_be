@@ -25,9 +25,55 @@ module.exports.getModelByUserId = async (req, res) => {
   }
 };
 
+module.exports.getModelTraining = async (req, res) => {
+  try {
+    const models = await modelService.getModelTraining(req.user.uid);
+    res.status(200).json(models);
+  } catch (error) {
+    res.status(500).json({
+      message: error,
+    });
+  }
+};
+
+module.exports.editModel = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    if (!id) {
+      return res.status(400).json({ message: "Model ID is required" });
+    }
+    const response = await modelService.editModel(id, updateData);
+    res.status(200).json({
+      message: response
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error,
+    });
+  }
+};
+
+module.exports.deleteModel = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ message: "Model ID is required" });
+    }
+    await axios.delete(`https://voice.dinhmanhhung.net/models/${id}`);
+    res.status(200).json({
+      message: "Model deleted successfully"
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error,
+    });
+  }
+};
+
 module.exports.trainModel = async (req, res) => {
   try {
-    const { name, f0_method } = req.body;
+    const { name, f0_method, epochs } = req.body;
     const file = req.file;
 
     if (!file) {
@@ -35,16 +81,16 @@ module.exports.trainModel = async (req, res) => {
     }
 
     // Kiểm tra xem uid đã tồn tại trong Firestore chưa
-    const userDoc = (await db.collection("users").where("uid", "==", req.user.uid).get()).docs;
-    if(userDoc.length > 0){
+    const modelsTraining = (await db.collection("models_training").where("uid", "==", req.user.uid).get()).docs;
+    if(modelsTraining.length > 0){
       return res.status(200).json({
-        message: "training"
+        message: "Bạn đang train 1 model khác"
       })
     }
 
-    await db.collection("users").add({
+    await db.collection("models_training").add({
       uid: req.user.uid,
-      createdAt: new Date(),
+      name: name,
     });
 
     const formData = new FormData();
@@ -52,7 +98,7 @@ module.exports.trainModel = async (req, res) => {
     formData.append("file", file.buffer, file.originalname);
     formData.append("name", name);
     formData.append("f0_method", f0_method);
-    formData.append("epochs_number", 100);
+    formData.append("epochs_number", epochs);
 
     const apiUrl = "https://voice.dinhmanhhung.net/train-model/";
     const response = await axios.post(apiUrl, formData, {
@@ -61,13 +107,14 @@ module.exports.trainModel = async (req, res) => {
       },
     });
 
-    const allUserDocs = (await db.collection("users").where("uid", "==", req.user.uid).get()).docs;
-    const deletePromises = allUserDocs.map((doc) => db.collection("users").doc(doc.id).delete());
+    const allUserDocs = (await db.collection("models_training").where("uid", "==", req.user.uid).get()).docs;
+    const deletePromises = allUserDocs.map((doc) => db.collection("models_training").doc(doc.id).delete());
     await Promise.all(deletePromises);
 
     res.status(200).json(response.data);
   } catch (error) {
     console.error(error);
+
     res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
