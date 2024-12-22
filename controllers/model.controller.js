@@ -88,9 +88,12 @@ module.exports.trainModel = async (req, res) => {
       })
     }
 
+    const trainAt = new Date();
+
     await db.collection("models_training").add({
       uid: req.user.uid,
       name: name,
+      trainAt: trainAt,
     });
 
     const formData = new FormData();
@@ -99,6 +102,7 @@ module.exports.trainModel = async (req, res) => {
     formData.append("name", name);
     formData.append("f0_method", f0_method);
     formData.append("epochs_number", epochs);
+    formData.append("trainAt", trainAt.toISOString());
 
     const apiUrl = "https://voice.dinhmanhhung.net/train-model/";
     const response = await axios.post(apiUrl, formData, {
