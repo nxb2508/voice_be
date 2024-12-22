@@ -84,7 +84,7 @@ module.exports.trainModel = async (req, res) => {
     const modelsTraining = (await db.collection("models_training").where("uid", "==", req.user.uid).get()).docs;
     if(modelsTraining.length > 0){
       return res.status(200).json({
-        message: "Bạn đang train 1 model khác"
+        message: "One model is training"
       })
     }
 
@@ -118,7 +118,9 @@ module.exports.trainModel = async (req, res) => {
     res.status(200).json(response.data);
   } catch (error) {
     console.error(error);
-
+    const allUserDocs = (await db.collection("models_training").where("uid", "==", req.user.uid).get()).docs;
+    const deletePromises = allUserDocs.map((doc) => db.collection("models_training").doc(doc.id).delete());
+    await Promise.all(deletePromises);
     res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
