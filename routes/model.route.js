@@ -7,8 +7,8 @@ const upload = multer();
 
 router.get("/", modelController.index);
 router.get("/me", authMiddleware.authentication, modelController.getModelByUserId);
-router.post("/text-to-speech-and-infer", upload.single("file"), modelController.textToSpeechAndInfer);
-router.post("/text-file-to-speech-and-infer", upload.single("file"), modelController.textToSpeechFileAndInfer);
+router.post("/text-to-speech-and-infer", authMiddleware.authenticationInfer, modelController.textToSpeechAndInfer);
+router.post("/text-file-to-speech-and-infer", authMiddleware.authenticationInfer, upload.single("file"), modelController.textToSpeechFileAndInfer);
 router.post("/infer-audio", authMiddleware.authenticationInfer, upload.single("file"), modelController.inferAudio);
 router.get("/training", authMiddleware.authentication, modelController.getModelTraining);
 router.patch("/edit/:id", authMiddleware.authentication, modelController.editModel);
