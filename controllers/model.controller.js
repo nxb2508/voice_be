@@ -12,7 +12,7 @@ module.exports.index = async (req, res) => {
   } catch (error) {
     res.json({
       message: error,
-      
+
     });
   }
 };
@@ -219,8 +219,8 @@ module.exports.inferAudio = async (req, res) => {
         ...formData.getHeaders(),
       },
     });
-
-    const outputFilePath = `./uploads/${nameModel}_infer_audio_${fileName}.wav`;
+    const now = Date.now();
+    const outputFilePath = `./uploads/${nameModel}_infer_audio_${fileName}_${now}.wav`;
     const writer = fs.createWriteStream(outputFilePath);
 
     response.data.pipe(writer);
@@ -230,7 +230,7 @@ module.exports.inferAudio = async (req, res) => {
       writer.on('error', reject);
     });
 
-    const urlFile = `${req.protocol}://${req.get('host')}/uploads/${nameModel}_infer_audio_${fileName}.wav`;
+    const urlFile = `${req.protocol}://${req.get('host')}/uploads/${nameModel}_infer_audio_${fileName}_${now}.wav`;
 
     if (req.user) {
       await modelService.updateHistory(
@@ -277,8 +277,9 @@ module.exports.textToSpeechFileAndInfer = async (req, res) => {
         ...formData.getHeaders(),
       },
     });
-
-    const outputFilePath = `./uploads/${nameModel}_text-file-to-speech-and-infer_${fileName}.wav`;
+    
+    const now = Date.now();
+    const outputFilePath = `./uploads/${nameModel}_text-file-to-speech-and-infer_${fileName}_${now}.wav`;
     const writer = fs.createWriteStream(outputFilePath);
 
     response.data.pipe(writer);
@@ -288,7 +289,7 @@ module.exports.textToSpeechFileAndInfer = async (req, res) => {
       writer.on('error', reject);
     });
 
-    const urlFile = `${req.protocol}://${req.get('host')}/uploads/${nameModel}_text-file-to-speech-and-infer_${fileName}.wav`;
+    const urlFile = `${req.protocol}://${req.get('host')}/uploads/${nameModel}_text-file-to-speech-and-infer_${fileName}_${now}.wav`;
 
     if (req.user) {
       await modelService.updateHistory(
