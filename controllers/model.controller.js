@@ -2,6 +2,8 @@ const modelService = require("../services/model.service");
 const axios = require("axios");
 const FormData = require("form-data");
 const db = require("../firebase-config").db;
+const fs = require('fs');
+const path = require('path');
 
 module.exports.index = async (req, res) => {
   try {
@@ -45,7 +47,7 @@ module.exports.editModel = async (req, res) => {
     }
     const response = await modelService.editModel(id, updateData);
     res.status(200).json({
-      message: response
+      message: response,
     });
   } catch (error) {
     res.status(500).json({
@@ -62,7 +64,7 @@ module.exports.deleteModel = async (req, res) => {
     }
     await axios.delete(`https://voice.dinhmanhhung.net/models/${id}`);
     res.status(200).json({
-      message: "Model deleted successfully"
+      message: "Model deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
@@ -81,11 +83,16 @@ module.exports.trainModel = async (req, res) => {
     }
 
     // Kiểm tra xem uid đã tồn tại trong Firestore chưa
-    const modelsTraining = (await db.collection("models_training").where("uid", "==", req.user.uid).get()).docs;
-    if(modelsTraining.length > 0){
+    const modelsTraining = (
+      await db
+        .collection("models_training")
+        .where("uid", "==", req.user.uid)
+        .get()
+    ).docs;
+    if (modelsTraining.length > 0) {
       return res.status(200).json({
-        message: "One model is training"
-      })
+        message: "One model is training",
+      });
     }
 
     const trainAt = new Date();
@@ -111,16 +118,141 @@ module.exports.trainModel = async (req, res) => {
       },
     });
 
-    const allUserDocs = (await db.collection("models_training").where("uid", "==", req.user.uid).get()).docs;
-    const deletePromises = allUserDocs.map((doc) => db.collection("models_training").doc(doc.id).delete());
+    const allUserDocs = (
+      await db
+        .collection("models_training")
+        .where("uid", "==", req.user.uid)
+        .get()
+    ).docs;
+    const deletePromises = allUserDocs.map((doc) =>
+      db.collection("models_training").doc(doc.id).delete()
+    );
     await Promise.all(deletePromises);
 
     res.status(200).json(response.data);
   } catch (error) {
     console.error(error);
-    const allUserDocs = (await db.collection("models_training").where("uid", "==", req.user.uid).get()).docs;
-    const deletePromises = allUserDocs.map((doc) => db.collection("models_training").doc(doc.id).delete());
+    const allUserDocs = (
+      await db
+        .collection("models_training")
+        .where("uid", "==", req.user.uid)
+        .get()
+    ).docs;
+    const deletePromises = allUserDocs.map((doc) =>
+      db.collection("models_training").doc(doc.id).delete()
+    );
     await Promise.all(deletePromises);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+};
+
+module.exports.textToSpeechAndInfer = async (req, res) => {
+  try {
+    const { model_id } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+    const formData = new FormData();
+    formData.append("file", file.buffer, file.originalname);
+    formData.append("model_id", model_id);
+
+    const apiUrl = "https://voice.dinhmanhhung.net/infer-audio/";
+    const response = await axios.post(apiUrl, formData, {
+      headers: {
+        ...formData.getHeaders(),
+      },
+    });
+
+    res.status(200).json(response.data);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+};
+
+module.exports.inferAudio = async (req, res) => {
+  try {
+    const { model_id } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+    const formData = new FormData();
+    formData.append("file", file.buffer, file.originalname);
+    formData.append("model_id", model_id);
+
+    const snap = await db.collection('models').doc(model_id).get()
+    const nameModel = snap.data().name_model
+    const fileName = path.parse(file.originalname).name;
+
+    const apiUrl = "https://voice.dinhmanhhung.net/infer-audio/";
+
+    const response = await axios.post(apiUrl, formData, {
+      responseType: 'stream',
+      headers: {
+        ...formData.getHeaders(),
+      },
+    });
+
+    const outputFilePath = `./uploads/${nameModel}_infer_audio_${fileName}.wav`;
+    const writer = fs.createWriteStream(outputFilePath);
+
+    response.data.pipe(writer);
+
+    await new Promise((resolve, reject) => {
+      writer.on('finish', resolve);
+      writer.on('error', reject);
+    });
+
+    const urlFile = `${req.protocol}://${req.get('host')}/uploads/${nameModel}_infer_audio_${fileName}.wav`;
+
+    if (req.user) {
+      await modelService.updateHistory(
+        req.user.uid,
+        `${nameModel}_infer_audio_${fileName}`,
+        urlFile,
+        model_id,
+        new Date()
+      );
+    }
+
+    res.status(200).json({
+      url: urlFile
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+};
+
+module.exports.textToSpeechFileAndInfer = async (req, res) => {
+  try {
+    const { model_id } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+    const formData = new FormData();
+    formData.append("file", file.buffer, file.originalname);
+    formData.append("model_id", model_id);
+
+    const apiUrl = "https://voice.dinhmanhhung.net/infer-audio/";
+    const response = await axios.post(apiUrl, formData, {
+      headers: {
+        ...formData.getHeaders(),
+      },
+    });
+
+    res.status(200).json(response.data);
+  } catch (error) {
     res
       .status(500)
       .json({ message: "Internal server error", error: error.message });

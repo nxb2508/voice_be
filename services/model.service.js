@@ -56,3 +56,13 @@ module.exports.editModel = async (id, updateData) => {
 
   return "Model updated successfully";
 };
+
+module.exports.updateHistory = async (uid, name, url, modelId, createdAt) => {
+  await db.collection("histories").add({
+    user_id: uid,
+    name: name,
+    createdAt: createdAt,
+    url_file: url,
+    model_id: modelId
+  });
+};
