@@ -2,8 +2,8 @@ const modelService = require("../services/model.service");
 const axios = require("axios");
 const FormData = require("form-data");
 const db = require("../firebase-config").db;
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 module.exports.index = async (req, res) => {
   try {
@@ -12,7 +12,6 @@ module.exports.index = async (req, res) => {
   } catch (error) {
     res.json({
       message: error,
-
     });
   }
 };
@@ -112,7 +111,7 @@ module.exports.trainModel = async (req, res) => {
     formData.append("epochs_number", epochs);
     formData.append("trainAt", trainAt.toISOString());
 
-    const apiUrl = "https://voice.dinhmanhhung.net/train-model/";
+    const apiUrl = "http://14.224.131.219:8400/train-model/";
     const response = await axios.post(apiUrl, formData, {
       headers: {
         ...formData.getHeaders(),
@@ -153,13 +152,13 @@ module.exports.textToSpeechAndInfer = async (req, res) => {
   try {
     const apiUrl = "https://voice.dinhmanhhung.net/text-to-speech-and-infer/";
     const response = await axios.post(apiUrl, req.body, {
-      responseType: 'stream',
+      responseType: "stream",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
     });
-    const snap = await db.collection('models').doc(req.body.model_id).get()
-    const nameModel = snap.data().name_model
+    const snap = await db.collection("models").doc(req.body.model_id).get();
+    const nameModel = snap.data().name_model;
 
     const now = Date.now();
     const outputFilePath = `./uploads/${nameModel}_text-to-speech-and-infer_${now}.wav`;
@@ -169,11 +168,13 @@ module.exports.textToSpeechAndInfer = async (req, res) => {
     response.data.pipe(writer);
 
     await new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
+      writer.on("finish", resolve);
+      writer.on("error", reject);
     });
 
-    const urlFile = `${req.protocol}://${req.get('host')}/uploads/${nameModel}_text-to-speech-and-infer_${now}.wav`;
+    const urlFile = `${req.protocol}://${req.get(
+      "host"
+    )}/uploads/${nameModel}_text-to-speech-and-infer_${now}.wav`;
 
     if (req.user) {
       await modelService.updateHistory(
@@ -186,7 +187,7 @@ module.exports.textToSpeechAndInfer = async (req, res) => {
     }
 
     res.status(200).json({
-      url: urlFile
+      url: urlFile,
     });
   } catch (error) {
     res
@@ -207,14 +208,14 @@ module.exports.inferAudio = async (req, res) => {
     formData.append("file", file.buffer, file.originalname);
     formData.append("model_id", model_id);
 
-    const snap = await db.collection('models').doc(model_id).get()
-    const nameModel = snap.data().name_model
+    const snap = await db.collection("models").doc(model_id).get();
+    const nameModel = snap.data().name_model;
     const fileName = path.parse(file.originalname).name;
 
     const apiUrl = "https://voice.dinhmanhhung.net/infer-audio/";
 
     const response = await axios.post(apiUrl, formData, {
-      responseType: 'stream',
+      responseType: "stream",
       headers: {
         ...formData.getHeaders(),
       },
@@ -226,11 +227,13 @@ module.exports.inferAudio = async (req, res) => {
     response.data.pipe(writer);
 
     await new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
+      writer.on("finish", resolve);
+      writer.on("error", reject);
     });
 
-    const urlFile = `${req.protocol}://${req.get('host')}/uploads/${nameModel}_infer_audio_${fileName}_${now}.wav`;
+    const urlFile = `${req.protocol}://${req.get(
+      "host"
+    )}/uploads/${nameModel}_infer_audio_${fileName}_${now}.wav`;
 
     if (req.user) {
       await modelService.updateHistory(
@@ -243,7 +246,7 @@ module.exports.inferAudio = async (req, res) => {
     }
 
     res.status(200).json({
-      url: urlFile
+      url: urlFile,
     });
   } catch (error) {
     res
@@ -265,19 +268,20 @@ module.exports.textToSpeechFileAndInfer = async (req, res) => {
     formData.append("model_id", model_id);
     formData.append("locate", locate);
 
-    const snap = await db.collection('models').doc(model_id).get()
-    const nameModel = snap.data().name_model
+    const snap = await db.collection("models").doc(model_id).get();
+    const nameModel = snap.data().name_model;
     const fileName = path.parse(file.originalname).name;
 
-    const apiUrl = "https://voice.dinhmanhhung.net/text-file-to-speech-and-infer/";
+    const apiUrl =
+      "https://voice.dinhmanhhung.net/text-file-to-speech-and-infer/";
 
     const response = await axios.post(apiUrl, formData, {
-      responseType: 'stream',
+      responseType: "stream",
       headers: {
         ...formData.getHeaders(),
       },
     });
-    
+
     const now = Date.now();
     const outputFilePath = `./uploads/${nameModel}_text-file-to-speech-and-infer_${fileName}_${now}.wav`;
     const writer = fs.createWriteStream(outputFilePath);
@@ -285,11 +289,13 @@ module.exports.textToSpeechFileAndInfer = async (req, res) => {
     response.data.pipe(writer);
 
     await new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
+      writer.on("finish", resolve);
+      writer.on("error", reject);
     });
 
-    const urlFile = `${req.protocol}://${req.get('host')}/uploads/${nameModel}_text-file-to-speech-and-infer_${fileName}_${now}.wav`;
+    const urlFile = `${req.protocol}://${req.get(
+      "host"
+    )}/uploads/${nameModel}_text-file-to-speech-and-infer_${fileName}_${now}.wav`;
 
     if (req.user) {
       await modelService.updateHistory(
@@ -302,7 +308,7 @@ module.exports.textToSpeechFileAndInfer = async (req, res) => {
     }
 
     res.status(200).json({
-      url: urlFile
+      url: urlFile,
     });
   } catch (error) {
     res
